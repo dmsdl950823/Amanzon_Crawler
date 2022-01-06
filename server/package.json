@@ -1,0 +1,16 @@
+{
+  "name": "amazon_crawler",
+  "version": "1.0.0",
+  "description": "아마존 크롤러",
+  "main": "index.js",
+  "scripts": {
+    "server": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "axios": "^0.24.0",
+    "cheerio": "^1.0.0-rc.10"
+  }
+}
