@@ -14,5 +14,9 @@ getHtml()
   .then(html => {
     const $ = cheerio.load(html.data)
 
-    // log($)
+    const options = $('.nav-search-dropdown').children()[3]
+    
+    
+
+    log(options.val())
   })
