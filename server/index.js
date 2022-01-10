@@ -16,10 +16,10 @@ const getHtml = async () => {
 
 getHtml()
   .then(html => {
-    console.log(html)
-    // const $ = cheerio.load(html.data)
+    // console.log(html)
+    const $ = cheerio.load(html.data)
 
-    // console.log($.html())
+    console.log($.html())
 
     // const options = $('.nav-search-dropdown')//.children('option')
     // log(options.html())
