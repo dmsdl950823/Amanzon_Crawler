@@ -1,5 +1,9 @@
-const axios = require('axios')
+const request = require('request')
 const cheerio = require('cheerio')
+const fs = require('fs');
+const writeStream = fs.createWriteStream('post.csv')
+
+const axios = require('axios')
 const log = console.log
 
 const getHtml = async () => {
@@ -12,11 +16,20 @@ const getHtml = async () => {
 
 getHtml()
   .then(html => {
-    const $ = cheerio.load(html.data)
+    console.log(html)
+    // const $ = cheerio.load(html.data)
 
-    const options = $('.nav-search-dropdown').children()[3]
-    
-    
+    // console.log($.html())
 
-    log(options.val())
+    // const options = $('.nav-search-dropdown')//.children('option')
+    // log(options.html())
+    // console.log(options)
+
+    // const getNac = $('#nav-main')
+    // log(getNac.html())
+
+    // const searchBar = $('#twotabsearchtextbox')
+    // searchBar.val('ㅇㅅㅇ?')
+    // console.log(searchBar)
+
   })
