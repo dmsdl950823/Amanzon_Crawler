@@ -2,6 +2,7 @@
 const axios = require('axios')
 const cheerio = require('cheerio')
 const log = console.log
+const puppeteer = require('puppeteer')
 
 
 const fetchShelves = async () => {
@@ -18,8 +19,8 @@ const fetchShelves = async () => {
       },
       proxy: {
         protocol: 'https',
-        host: '168.196.211.10',
-        port: 55443
+        host: '101.99.95.54',
+        port: 80
       }
     })
 
@@ -52,98 +53,53 @@ const fetchShelves = async () => {
 //   console.error(error, '@@ :: Error')
 // })
 
+// 사용 예시
+// https://zenscrape.com/how-to-scrape-amazon-product-information-with-nodejs-and-puppeteer/
+
 const forPuppeteerTest = () => {
-  const puppeteer = require('puppeteer');
+
+  console.log('Browser Start!')
+  // console.log('pupeteer', puppeteer)
   
   puppeteer.launch({
-    headless: true,
+    headless: false,
     // https://free-proxy-list.net/ (프록시서버)
-    args: ['--proxy-server=47.243.135.104:8080', '--no-sandbox', '--disable-setuid-sandbox', '--window-size=1920,1080','--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"']
+    // args: ['--proxy-server=47.243.135.104:8080', '--no-sandbox', '--disable-setuid-sandbox', '--window-size=1920,1080','--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"'],
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--window-size=1920,1080','--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"'],
+    slowMo: 30,   
   }).then(async browser => {
-  
-    // https://zenscrape.com/how-to-scrape-amazon-product-information-with-nodejs-and-puppeteer/
-    const page = await browser.newPage()
-    await page.goto("https://www.amazon.com/s?k=supplies&page=2&qid=1641879572&ref=sr_pg_2");
-  
-    await page.screenshot({ path: 'example.png' });
-    await page.waitForSelector('.s-desktop-width-max.s-desktop-content.sg-row')
 
-    const productInfo = await page.evaluate(() => {
-      console.log()
-    })
-      // const productInfo = await page.evaluate(() => {
-      //   console.log(document)
+    const page = await browser.newPage() // 크롬 브라우저의 탭 하나 생성
+    
+    await page.setViewport({ width: 1920, height: 1080 })
+    // await page.screenshot({ path: 'screenshot/open.png' })
+    // await page.goto("https://www.amazon.com/s?k=supplies&page=2&qid=1641879572&ref=sr_pg_2");
 
+    console.log('페이지 로딩 된건디?')
+    
+    Promise.all([
+      await page.goto("https://www.naver.com/"),
+      await page.waitForSelector() // 화면이 로딩될때까지 기다려라
+    ])
 
-      //   // return {
-      //   //   width: document.documentElement.clientWidth,
-      //   //   height: document.documentElement.clientHeight,
-      //   //   deviceScaleFactor: window.devicePixelRatio,
-      //   // };
+    // https://www.youtube.com/watch?v=eynT_cMvOTU 동영상 강의
+    console.log('finish waiting..!!!')
 
+    let target = "//span[text()='쇼핑']/ancestor::a"
+    await page.waitForXPath(target) // 해당 xpath 를 찾을때 까지 기본적으로 30 초 기다림
+    let s = await page.$x(target)
+    s = s[0]
+    
+    await Promise.all([
+      await s.click(),
+      await page.waitForSelector() // 화면이 로딩될때까지 기다려라
+    ])
 
-      //   /* Get product title */
-      //   // let title = document.body.querySelector('#productTitle').innerText;
-
-      //   // /* Get review count */
-      //   // let reviewCount = document.body.querySelector('#acrCustomerReviewText').innerText;
-      //   // let formattedReviewCount = reviewCount.replace(/[^0-9]/g,'').trim();
-
-      //   // /* Get and format rating */
-      //   // let ratingElement = document.body.querySelector('.a-icon.a-icon-star').getAttribute('class');
-      //   // let integer = ratingElement.replace(/[^0-9]/g,'').trim();
-      //   // let parsedRating = parseInt(integer) / 10;
-
-      //   // /* Get availability */
-      //   // let availability = document.body.querySelector('#availability').innerText; 
-      //   // let formattedAvailability = availability.replace(/[^0-9]/g, '').trim();
-
-      //   // /* Get list price */
-      //   // let listPrice = document.body.querySelector('.priceBlockStrikePriceString').innerText;
-
-      //   // /* Get price */
-      //   // let price = document.body.querySelector('#priceblock_ourprice').innerText;
-
-      //   // /* Get product description */
-      //   // let description = document.body.querySelector('#renewedProgramDescriptionAtf').innerText;
-
-      //   // /* Get product features */
-      //   // let features = document.body.querySelectorAll('#feature-bullets ul li');
-      //   // let formattedFeatures = [];
-
-      //   // features.forEach((feature) => {
-      //   //     formattedFeatures.push(feature.innerText);
-      //   // });
-
-      //   // /* Get comparable items */
-      //   // let comparableItems = document.body.querySelectorAll('#HLCXComparisonTable .comparison_table_image_row .a-link-normal');                
-      //   // formattedComparableItems = [];
-
-      //   // comparableItems.forEach((item) => {
-      //   //     formattedComparableItems.push("https://amazon.com" + item.getAttribute('href'));
-      //   // });
-
-        
-      //   // var product = { 
-      //   //     "title": title,
-      //   //     "rating": parsedRating,
-      //   //     "reviewCount" : formattedReviewCount,
-      //   //     "listPrice": listPrice,
-      //   //     "price": price,
-      //   //     "availability": formattedAvailability,
-      //   //     "description": description,
-      //   //     "features": formattedFeatures,
-      //   //     "comparableItems": formattedComparableItems
-      //   // };
-
-      //   // return product;
-      // });
-  
-      // console.log(productInfo);
-      await browser.close();
+    await page.waitForTimeout(3000) // 3 초 정도 기다림
+    await browser.close()
   
   }).catch(function(error) {
-      console.error(error);
+      console.error(error)
   })
 }
 
