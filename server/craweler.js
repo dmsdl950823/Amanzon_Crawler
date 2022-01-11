@@ -18,18 +18,16 @@ const fetchShelves = async () => {
       },
       proxy: {
         protocol: 'https',
-        host: '10.10.1.10',
-        port: 1080
+        host: '168.196.211.10',
+        port: 55443
       }
     })
-
-    console.log(response)
 
     
     const html = response.data
     const $ = cheerio.load(html)
     const shelves = []
-    // console.log(html)
+    console.log(html)
 
     $('div.sg-col-4-of-12.s-result-item.s-asin.sg-col-4-of-16.sg-col.sg-col-4-of-20').each((_idx, el) => {
       const shelf = $(el)
@@ -49,82 +47,104 @@ const fetchShelves = async () => {
   }
 }
 
-const puppeteer = require('puppeteer');
+// fetchShelves().then(shelved => console.log('done!'))
+// .catch((error) => {
+//   console.error(error, '@@ :: Error')
+// })
 
-puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--window-size=1920,1080','--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"'] }).then(async browser => {
+const forPuppeteerTest = () => {
+  const puppeteer = require('puppeteer');
+  
+  puppeteer.launch({
+    headless: true,
+    // https://free-proxy-list.net/ (프록시서버)
+    args: ['--proxy-server=47.243.135.104:8080', '--no-sandbox', '--disable-setuid-sandbox', '--window-size=1920,1080','--user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36"']
+  }).then(async browser => {
+  
+    // https://zenscrape.com/how-to-scrape-amazon-product-information-with-nodejs-and-puppeteer/
+    const page = await browser.newPage()
+    await page.goto("https://www.amazon.com/s?k=supplies&page=2&qid=1641879572&ref=sr_pg_2");
+  
+    await page.screenshot({ path: 'example.png' });
+    await page.waitForSelector('.s-desktop-width-max.s-desktop-content.sg-row')
 
-  // https://zenscrape.com/how-to-scrape-amazon-product-information-with-nodejs-and-puppeteer/
-  const page = await browser.newPage()
-	await page.goto("https://www.amazon.com/Apple-iPhone-XR-Fully-Unlocked/dp/B07P6Y7954");
-  console.log(page)
+    const productInfo = await page.evaluate(() => {
+      console.log()
+    })
+      // const productInfo = await page.evaluate(() => {
+      //   console.log(document)
 
-  await page.screenshot({ path: 'example.png' });
-	await page.waitForSelector('body')
 
-    var productInfo = await page.evaluate(() => {
-      console.log(document.body)
-      
-        /* Get product title */
-        let title = document.body.querySelector('#productTitle').innerText;
+      //   // return {
+      //   //   width: document.documentElement.clientWidth,
+      //   //   height: document.documentElement.clientHeight,
+      //   //   deviceScaleFactor: window.devicePixelRatio,
+      //   // };
 
-        /* Get review count */
-        let reviewCount = document.body.querySelector('#acrCustomerReviewText').innerText;
-        let formattedReviewCount = reviewCount.replace(/[^0-9]/g,'').trim();
 
-        /* Get and format rating */
-        let ratingElement = document.body.querySelector('.a-icon.a-icon-star').getAttribute('class');
-        let integer = ratingElement.replace(/[^0-9]/g,'').trim();
-        let parsedRating = parseInt(integer) / 10;
+      //   /* Get product title */
+      //   // let title = document.body.querySelector('#productTitle').innerText;
 
-        /* Get availability */
-        let availability = document.body.querySelector('#availability').innerText; 
-        let formattedAvailability = availability.replace(/[^0-9]/g, '').trim();
+      //   // /* Get review count */
+      //   // let reviewCount = document.body.querySelector('#acrCustomerReviewText').innerText;
+      //   // let formattedReviewCount = reviewCount.replace(/[^0-9]/g,'').trim();
 
-        /* Get list price */
-        let listPrice = document.body.querySelector('.priceBlockStrikePriceString').innerText;
+      //   // /* Get and format rating */
+      //   // let ratingElement = document.body.querySelector('.a-icon.a-icon-star').getAttribute('class');
+      //   // let integer = ratingElement.replace(/[^0-9]/g,'').trim();
+      //   // let parsedRating = parseInt(integer) / 10;
 
-        /* Get price */
-        let price = document.body.querySelector('#priceblock_ourprice').innerText;
+      //   // /* Get availability */
+      //   // let availability = document.body.querySelector('#availability').innerText; 
+      //   // let formattedAvailability = availability.replace(/[^0-9]/g, '').trim();
 
-        /* Get product description */
-        let description = document.body.querySelector('#renewedProgramDescriptionAtf').innerText;
+      //   // /* Get list price */
+      //   // let listPrice = document.body.querySelector('.priceBlockStrikePriceString').innerText;
 
-        /* Get product features */
-        let features = document.body.querySelectorAll('#feature-bullets ul li');
-        let formattedFeatures = [];
+      //   // /* Get price */
+      //   // let price = document.body.querySelector('#priceblock_ourprice').innerText;
 
-        features.forEach((feature) => {
-            formattedFeatures.push(feature.innerText);
-        });
+      //   // /* Get product description */
+      //   // let description = document.body.querySelector('#renewedProgramDescriptionAtf').innerText;
 
-        /* Get comparable items */
-        let comparableItems = document.body.querySelectorAll('#HLCXComparisonTable .comparison_table_image_row .a-link-normal');                
-        formattedComparableItems = [];
+      //   // /* Get product features */
+      //   // let features = document.body.querySelectorAll('#feature-bullets ul li');
+      //   // let formattedFeatures = [];
 
-        comparableItems.forEach((item) => {
-            formattedComparableItems.push("https://amazon.com" + item.getAttribute('href'));
-        });
+      //   // features.forEach((feature) => {
+      //   //     formattedFeatures.push(feature.innerText);
+      //   // });
+
+      //   // /* Get comparable items */
+      //   // let comparableItems = document.body.querySelectorAll('#HLCXComparisonTable .comparison_table_image_row .a-link-normal');                
+      //   // formattedComparableItems = [];
+
+      //   // comparableItems.forEach((item) => {
+      //   //     formattedComparableItems.push("https://amazon.com" + item.getAttribute('href'));
+      //   // });
 
         
-        var product = { 
-            "title": title,
-            "rating": parsedRating,
-            "reviewCount" : formattedReviewCount,
-            "listPrice": listPrice,
-            "price": price,
-            "availability": formattedAvailability,
-            "description": description,
-            "features": formattedFeatures,
-            "comparableItems": formattedComparableItems
-        };
+      //   // var product = { 
+      //   //     "title": title,
+      //   //     "rating": parsedRating,
+      //   //     "reviewCount" : formattedReviewCount,
+      //   //     "listPrice": listPrice,
+      //   //     "price": price,
+      //   //     "availability": formattedAvailability,
+      //   //     "description": description,
+      //   //     "features": formattedFeatures,
+      //   //     "comparableItems": formattedComparableItems
+      //   // };
 
-        return product;
-        
-    });
+      //   // return product;
+      // });
+  
+      // console.log(productInfo);
+      await browser.close();
+  
+  }).catch(function(error) {
+      console.error(error);
+  })
+}
 
-    console.log(productInfo);
-    await browser.close();
-
-}).catch(function(error) {
-    console.error(error);
-});
+forPuppeteerTest()
