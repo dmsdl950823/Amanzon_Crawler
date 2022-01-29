@@ -143,13 +143,13 @@ const forPuppeteerWithPage = async () => {
   await page.goto('https://www.amazon.com')
 
   // [postcode 설정]
-  await page.click('#nav-global-location-slot')
-  await page.waitForSelector('#GLUXSignInButton')
-  await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
-  await page.click('#GLUXZipUpdate-announce')
+  // await page.click('#nav-global-location-slot')
+  // await page.waitForSelector('#GLUXSignInButton')
+  // await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
+  // await page.click('#GLUXZipUpdate-announce')
 
-  await page.waitForSelector('.a-popover-footer')
-  await page.click('.a-popover-footer #GLUXConfirmClose')
+  // await page.waitForSelector('.a-popover-footer')
+  // await page.click('.a-popover-footer #GLUXConfirmClose')
   // console.log('클릭한겨?')
 
   // [카테고리 설정]
@@ -180,8 +180,24 @@ const forPuppeteerWithPage = async () => {
     for (let i = 0; i < elements.length; i++) {
       const item = elements[i]
 
+      // [Sponsed 인경우 건너뛰기]
+      // const sponserd = await item.$('a.s-sponsored-label-text')
+      // if (sponsered) continue
+
       const title = await item.$eval('h2 a.a-link-normal.s-underline-text span.a-text-normal', el => el.textContent)
       const image = await item.$eval('div.s-product-image-container img.s-image', el => el.getAttribute('src'))
+
+      // [item 상세]
+      const eachItem = await item.$('.s-card-container')
+      await eachItem.click()
+      
+      await page.waitForSelector('#prodDetails') // [상세 가져올때까지 기다리기]
+
+      // 새로운 탭을 열어서, 상세 가져온 후, 닫기 => 다시 루프 재개
+
+      // 뒤로가기
+      await page.goBack()
+
 
       // const image
       // const brand
