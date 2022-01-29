@@ -105,11 +105,11 @@ const forPuppeteerTest = async () => {
   await page.waitForSelector('.s-main-slot')
   const elements = await page.$$('.s-main-slot > .sg-col-4-of-12')
 
+  // https://www.youtube.com/watch?v=sm2A4gpIiD0
   for (let i = 0; i < elements.length; i++) {
     const item = elements[i]
 
-    const title = await item.$eval('h2 a.a-link-normal.s-underline-text span.a-text-normal', el => el.textContent)
-    console.log(title)
+    // const title = await item.$eval('h2 a.a-link-normal.s-underline-text span.a-text-normal', el => el.textContent)
   }
 
   // ===
