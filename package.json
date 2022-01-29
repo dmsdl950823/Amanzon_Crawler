@@ -1,0 +1,23 @@
+{
+  "name": "amazon_crawler",
+  "version": "1.0.0",
+  "description": "아마존 용 웹 크롤러",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmsdl950823/Amanzon_Crawler.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dmsdl950823/Amanzon_Crawler/issues"
+  },
+  "homepage": "https://github.com/dmsdl950823/Amanzon_Crawler#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}

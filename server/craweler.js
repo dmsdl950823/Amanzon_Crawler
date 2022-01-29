@@ -37,7 +37,7 @@ const fetchShelves = async () => {
       const asin = shelf.attr('data-asin') // asin number
       const href = shelf.find('a.a-link-normal.s-link-style.a-text-normal').attr('href')
 
-      // console.log(title, ' :: ', href)
+      console.log(title, ' :: ', href)
 
       shelves.push(title)
     })
@@ -75,7 +75,7 @@ const forPuppeteerTest = () => {
     // await page.screenshot({ path: 'screenshot/open.png' })
     // await page.goto("https://www.amazon.com/s?k=supplies&page=2&qid=1641879572&ref=sr_pg_2");
 
-    console.log('페이지 로딩 된건디?')
+    console.log('페이지 로딩 완료')
     
     Promise.all([
       await page.goto("https://www.naver.com/"),
@@ -85,15 +85,18 @@ const forPuppeteerTest = () => {
     // https://www.youtube.com/watch?v=eynT_cMvOTU 동영상 강의
     console.log('finish waiting..!!!')
 
-    let target = "//span[text()='쇼핑']/ancestor::a"
-    await page.waitForXPath(target) // 해당 xpath 를 찾을때 까지 기본적으로 30 초 기다림
-    let s = await page.$x(target)
-    s = s[0]
+    let target = '#gnb .list_nav .nav_item:nth-child(4)'
+    await page.click(target)
+
+    // let target = "//span[text()='쇼핑']/ancestor::a"
+    // await page.waitForXPath(target) // 해당 xpath 를 찾을때 까지 기본적으로 30 초 기다림
+    // let s = await page.$x(target)
+    // s = s[0]
     
-    await Promise.all([
-      await s.click(),
-      await page.waitForSelector() // 화면이 로딩될때까지 기다려라
-    ])
+    // await Promise.all([
+    //   await s.click(),
+    //   await page.waitForSelector() // 화면이 로딩될때까지 기다려라
+    // ])
 
     await page.waitForTimeout(3000) // 3 초 정도 기다림
     await browser.close()
