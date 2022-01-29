@@ -1,35 +1,32 @@
-const request = require('request')
-const cheerio = require('cheerio')
-const fs = require('fs');
-const writeStream = fs.createWriteStream('post.csv')
+const express = require('express')
+const cors = require('cors')
+const mongoose = require('mongoose') // mongodb 연결
 
-const axios = require('axios')
-const log = console.log
+require('dotenv').config();
 
-const getHtml = async () => {
-  try {
-    return await axios.get('https://www.amazon.com')
-  } catch (error) {
-    throw error
-  }
-}
+const app = express();
+const port = process.env.PORT || 8000;
 
-getHtml()
-  .then(html => {
-    // console.log(html)
-    const $ = cheerio.load(html.data)
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-    console.log($.html())
+const uri = process.env.ATLAS_URI // db URI
+// mongoose.connect(uri, { useNewUrlParser: true, useCreateIndex: true })
+mongoose.connect(uri)
+const connection = mongoose.connection
+connection.once('open', () => {
+  console.log('MongoDB database connection establised successfully')
+})
 
-    // const options = $('.nav-search-dropdown')//.children('option')
-    // log(options.html())
-    // console.log(options)
+const excerciseRouter = require('./routes/exercies')
+const usersRouter = require('./routes/users')
 
-    // const getNac = $('#nav-main')
-    // log(getNac.html())
+app.use('/exercises', excerciseRouter)
+app.use('/users', usersRouter)
 
-    // const searchBar = $('#twotabsearchtextbox')
-    // searchBar.val('ㅇㅅㅇ?')
-    // console.log(searchBar)
 
-  })
+app.listen(port, () => {
+  console.log(`Server started on port ${port}`)
+});
+// app.listen(port, () => )
