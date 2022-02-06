@@ -98,12 +98,13 @@ const forPuppeteerWithPage = async () => {
       console.log(`${colors.fgMagenta}sponsered :: ${!!sponsered}`, colors.reset)
       if (sponsered) continue
 
-      // const title = await item.$eval('h2 a.a-link-normal.s-underline-text span.a-text-normal', el => el.textContent)
-      const price = await item.$eval('div.a-section.a-spacing-small span.a-price', el => el.textContent)
+      const price1 = await item.$('div.a-section.a-spacing-small span.a-price') || null
       const image = await item.$eval('div.s-product-image-container img.s-image', el => el.getAttribute('src'))
       const href = await item.$eval('a.a-link-normal.s-no-outline', el => el.getAttribute('href'))
+      const asin = await item.evaluate(el => el.getAttribute('data-asin'), item)
 
       console.log('└ href ===> ', `https://www.amazon.com${href}`)
+      console.log('└ asin ===> ', asin)
 
       // [item 상세] ✅
       const detailPage = await browser.newPage()
@@ -111,6 +112,10 @@ const forPuppeteerWithPage = async () => {
       await detailPage.goto(`https://www.amazon.com${href}`, { waitUntil: 'load', timeout: 0 })
       
       const title = await detailPage.$eval('#title', el => el.textContent)
+      const price2 = await detailPage.$('#corePriceDisplay_desktop_feature_div span.a-offscreen') || null
+      const price3 = await detailPage.$('span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen') || null
+      const rating = await detailPage.$eval('#acrCustomerReviewLink.a-link-normal', el => el.textContent.trim().replace(/ ratings| rating/gi, '').replace(/,/gi, ''))
+      
       
       const details = {}
 
@@ -118,14 +123,12 @@ const forPuppeteerWithPage = async () => {
         for (let i = 0; i < trs.length; i++) {
           const tr = trs[i]
 
+          // 나중에 🟨 key 값 통일하기
           const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
           const td = await tr.$eval('td', el => {
             const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
             
-            let rating = undefined
-            if (isReview) { // Review 섹션인경우 review 갯수 / rating 갯수 자르기
-              const rating = isReview.textContent
-              // if (rating !== undefined) details.customer_rating = rating
+            if (isReview) { // Review 섹션인경우 review 갯수
               return el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]
             }
             return el.textContent
@@ -138,18 +141,30 @@ const forPuppeteerWithPage = async () => {
         }
       }
       
-      // Product Information - Technical Details
-      await detailPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
-      const technicalDetails = await detailPage.$$('#productDetails_techSpec_section_1 tbody tr')
-      // console.log('---- technicalDetails ---')
-      await tableIterator(technicalDetails)
       
-      // Product Information - Additional Information
-      const additionalInfos = await detailPage.$$('#productDetails_detailBullets_sections1 tbody tr')
-      // console.log('---- additionalInfos ---')
-      await tableIterator(additionalInfos)
+      const hasDetail = await detailPage.$('#prodDetails') || false
+      if (hasDetail) {
+        // [Product Information - Technical Details] ✅
+        await detailPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
+        const technicalDetails = await detailPage.$$('#productDetails_techSpec_section_1 tbody tr')
+        // console.log('---- technicalDetails ---')
+        await tableIterator(technicalDetails)
+        
+        // [Product Information - Additional Information] ✅
+        const additionalInfos = await detailPage.$$('#productDetails_detailBullets_sections1 tbody tr')
+        // console.log('---- additionalInfos ---')
+        await tableIterator(additionalInfos)
+      }
 
-      // console.log(details)
+        // [방어로직들]
+        const priceNode = await (price1 || price2 || price3)
+        const price = priceNode ? await priceNode.evaluate(el => el.textContent.split('$')[1], priceNode) : null
+        //  console.log(price1 ? 'price1' : null, price2 ? 'price2' : null, price3 ? 'price3' : null)
+        
+
+        // console.log(details)
+
+
 
       // const category 😢
       // const rank 🤷‍♂️
@@ -159,15 +174,18 @@ const forPuppeteerWithPage = async () => {
       // 상세페이지 닫기 ✅
       detailPage.close()
 
+
       // =================
       // ====== 결론 ======
       // =================
 
       const object = {
-        title,
-        price,
+        title: title.trim(),
         image,
-        href,
+        price,
+        href: `https://www.amazon.com${href}`,
+        asin,
+        rating,
         ...details
       }
 
@@ -176,7 +194,7 @@ const forPuppeteerWithPage = async () => {
     }
   }
 
-  await saveWithCSV(result)
+  const writed = await saveWithCSV(result)
 
   // ===
   // ===
@@ -189,8 +207,10 @@ const forPuppeteerWithPage = async () => {
   // await page.waitForSelector('#ppd')
   // await page.screenshot({ path: screenshot })
   
-  // console.log('bye!!')
-  // await browser.close()
+  if (writed) {
+    console.log('bye!!')
+    await browser.close()
+  }
 }
 
 forPuppeteerWithPage()
@@ -217,13 +237,7 @@ const TEST = async () => {
 
   const testPage = await browser.newPage() // 크롬 브라우저의 탭 하나 생성
   await testPage.setViewport({ width: 1020, height: 890 })
-  await testPage.goto('https://www.amazon.com/Envelopes-Shipping-Adhesive-Waterproof-Tear-Proof/dp/B07SQV2WQ7/ref=sr_1_9580?keywords=supplies&qid=1644076194&s=office-products&sr=1-9580&th=1', { waitUntil: 'load', timeout: 0 })
-
-
-  // const title2 = await detailPage.$$('#title', el => el.textContent)
-  // const title2 = await testPage.$eval('#title', el => el.textContent)
-  // const brand = await testPage.$eval('#bylineInfo', el => el.textContent) || null
-  // const price = await testPage.$eval('#bylineInfo', el => el.textContent) || null // ㅇㅅㅇ (위에서 설정 예정)
+  await testPage.goto('https://www.amazon.com/Professional-Painting-Supplies-Hobbyists-Beginners/dp/B08L7K5N4Z/ref=sr_1_10?keywords=supplies&qid=1644148891&s=office-products&sr=1-10', { waitUntil: 'load', timeout: 0 })
 
   const test = {}
 
@@ -245,29 +259,23 @@ const TEST = async () => {
     }
   }
   
-  // Product Information - Technical Details
-  
-  await testPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
-  const technicalDetails = await testPage.$$('#productDetails_techSpec_section_1 tbody tr')
-  console.log('---- technicalDetails ---')
-  await tableIterator(technicalDetails)
-  
-  // Product Information - Additional Information
-  const additionalInfos = await testPage.$$('#productDetails_detailBullets_sections1 tbody tr')
-  console.log('---- additionalInfos ---')
-  await tableIterator(additionalInfos)
+  const hasDetail = await testPage.$('#prodDetails') || false
+  if (hasDetail) {
+    // Product Information - Technical Details
+    await testPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
+    const technicalDetails = await testPage.$$('#productDetails_techSpec_section_1 tbody tr')
+    console.log('---- technicalDetails ---')
+    await tableIterator(technicalDetails)
+    
+    // Product Information - Additional Information
+    const additionalInfos = await testPage.$$('#productDetails_detailBullets_sections1 tbody tr')
+    console.log('---- additionalInfos ---')
+    await tableIterator(additionalInfos)
+  } else {
+    console.log('ㄻㄴㄷㄻㄴㄷ..?')
+  }
 
   console.log(test)
-
-
-
-  // const category
-  // const rank
-  // const sales
-  // const revenue
-  // const reviews
-  // const rating
-  // const weight
 
   
   console.log('bye!!')
