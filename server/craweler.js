@@ -24,6 +24,8 @@ const saveWithCSV = (json) => {
   //   description: 'for building mobile & desktop web app',
   //   created_at: '2021-09-08' }
   // ]
+
+  // console.log(json)
   
   return fastcsv
     .write(json, { headers: true })
@@ -40,6 +42,9 @@ const forPuppeteerWithPage = async () => {
   console.log(`${colors.bgBlue}     >>> Browser Start! <<<    `, colors.reset)
   // console.log('pupeteer', puppeteer)
   
+  // [물품 정보 저장] ✅
+  const result = []
+
   const browser = await puppeteer.launch({
     headless: false,
     // https://free-proxy-list.net/ (프록시서버)
@@ -48,113 +53,112 @@ const forPuppeteerWithPage = async () => {
     slowMo: 30,
   })
 
-  const page = await browser.newPage() // 크롬 브라우저의 탭 하나 생성
-  // await page.setDefaultNavigationTimeout(0)
+
+  try {
+    const page = await browser.newPage() // 크롬 브라우저의 탭 하나 생성
+    // await page.setDefaultNavigationTimeout(0)
+    
+    // https://www.tabnine.com/code/javascript/functions/puppeteer/Page/waitForSelector :: 참고 문헌
+    // https://ourcodeworld.com/articles/read/1106/how-to-solve-puppeteer-timeouterror-navigation-timeout-of-30000-ms-exceeded :: timeout 관련 문헌
+    await page.setViewport({ width: 1020, height: 890 })
+    await page.goto('https://www.amazon.com', { waitUntil: 'load', timeout: 0 })
   
-  // https://www.tabnine.com/code/javascript/functions/puppeteer/Page/waitForSelector :: 참고 문헌
-  // https://ourcodeworld.com/articles/read/1106/how-to-solve-puppeteer-timeouterror-navigation-timeout-of-30000-ms-exceeded :: timeout 관련 문헌
-  await page.setViewport({ width: 1020, height: 890 })
-  await page.goto('https://www.amazon.com', { waitUntil: 'load', timeout: 0 })
-
-  // [postcode 설정] ✅
-  await page.click('#nav-global-location-slot')
-  await page.waitForSelector('#GLUXSignInButton')
-  await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
-  await page.click('#GLUXZipUpdate-announce')
-
-  await page.waitForSelector('.a-popover-footer')
-  await page.evaluate(() => location.reload(true))
-
-  // [카테고리 설정] ✅
-  const category = catetories['Office Products']
-  const search_input = 'supplies'
-
-  // [텍스트 입력, 페이지 끝까지 기다리기] 🟨
-  // [현재 URL - Query Parameter 저장]
-  // const query = await page.evaluate(() => location.href.split('www.amazon.com')[1])
-
+    // [postcode 설정] ✅
+    await page.click('#nav-global-location-slot')
+    await page.waitForSelector('#GLUXSignInButton')
+    await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
+    await page.click('#GLUXZipUpdate-announce')
   
-  // [물품 정보 저장] ✅
-  const result = []
-
-  // [페이지 돌면서 물품들 확인] ✅
-  for (let pg = 1; pg <= 400; pg++) {
-    // await page.goto('https://www.amazon.com/s?{search_input}&i={category}&page={pg}') // 페이지 이동
-    const url = `https://www.amazon.com/s?k=${search_input}&i=${category}&page=${pg}`
-    console.log(`@@ GO page :: ${pg} =>`, url)
-
-    await page.goto(url, { waitUntil: 'load', timeout: 0 })
-    await page.waitForSelector('.s-main-slot') // [목록 가져올때까지 기다리기]
-
-    const elements = await page.$$('.s-main-slot > .sg-col-4-of-12')
+    await page.waitForSelector('.a-popover-footer')
+    await page.evaluate(() => location.reload(true))
   
-    // [items 목록 순회] ✅
-    // https://www.youtube.com/watch?v=sm2A4gpIiD0
-    for (let i = 0; i < elements.length; i++) {
-      const item = elements[i]
+    // [카테고리 설정] ✅
+    const category = catetories['Office Products']
+    const search_input = 'supplies'
+  
+    // [텍스트 입력, 페이지 끝까지 기다리기] 🟨
+    // [현재 URL - Query Parameter 저장]
+    // const query = await page.evaluate(() => location.href.split('www.amazon.com')[1])
+  
+    
+    // [페이지 돌면서 물품들 확인] ✅
+    for (let pg = 1; pg <= 400; pg++) {
+      // await page.goto('https://www.amazon.com/s?{search_input}&i={category}&page={pg}') // 페이지 이동
+      const url = `https://www.amazon.com/s?k=${search_input}&i=${category}&page=${pg}`
+      console.log(`@@ GO page :: ${pg} =>`, url)
 
-      // [Sponsed 인경우 건너뛰기] ✅
-      const sponsered = await item.$('a.s-sponsored-label-text') || false
-      console.log(`${colors.fgMagenta}sponsered :: ${!!sponsered}`, colors.reset)
-      if (sponsered) continue
+      await page.goto(url, { waitUntil: 'load', timeout: 0 })
+      await page.waitForSelector('.s-main-slot') // [목록 가져올때까지 기다리기]
 
-      const price1 = await item.$('div.a-section.a-spacing-small span.a-price') || null
-      const image = await item.$eval('div.s-product-image-container img.s-image', el => el.getAttribute('src'))
-      const href = await item.$eval('a.a-link-normal.s-no-outline', el => el.getAttribute('href'))
-      const asin = await item.evaluate(el => el.getAttribute('data-asin'), item)
+      const elements = await page.$$('.s-main-slot > .sg-col-4-of-12')
+    
+      // [items 목록 순회] ✅
+      // https://www.youtube.com/watch?v=sm2A4gpIiD0
+      for (let i = 0; i < elements.length; i++) {
+        const item = elements[i]
 
-      console.log('└ href ===> ', `https://www.amazon.com${href}`)
-      console.log('└ asin ===> ', asin)
+        // [Sponsed 인경우 건너뛰기] ✅
+        const sponsered = await item.$('a.s-sponsored-label-text') || false
+        console.log(`${colors.fgMagenta}sponsered :: ${!!sponsered}`, colors.reset)
+        if (sponsered) continue
 
-      // [item 상세] ✅
-      const detailPage = await browser.newPage()
-      await detailPage.setViewport({ width: 1020, height: 890 })
-      await detailPage.goto(`https://www.amazon.com${href}`, { waitUntil: 'load', timeout: 0 })
-      
-      const title = await detailPage.$eval('#title', el => el.textContent)
-      const price2 = await detailPage.$('#corePriceDisplay_desktop_feature_div span.a-offscreen') || null
-      const price3 = await detailPage.$('span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen') || null
-      const rateNode = await detailPage.$('#acrCustomerReviewLink.a-link-normal') || null
-      
-      
-      const details = {}
+        const price1 = await item.$('div.a-section.a-spacing-small span.a-price') || null
+        const image = await item.$eval('div.s-product-image-container img.s-image', el => el.getAttribute('src'))
+        const href = await item.$eval('a.a-link-normal.s-no-outline', el => el.getAttribute('href'))
+        const asin = await item.evaluate(el => el.getAttribute('data-asin'), item)
 
-      const tableIterator = async (trs) => {
-        for (let i = 0; i < trs.length; i++) {
-          const tr = trs[i]
+        console.log('└ href ===> ', `https://www.amazon.com${href}`)
+        console.log('└ asin ===> ', asin)
 
-          // 나중에 🟨 key 값 통일하기
-          const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
-          const td = await tr.$eval('td', el => {
-            const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
-            
-            if (isReview) { // Review 섹션인경우 review 갯수
-              return el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]
-            }
-            return el.textContent
-          }) || null
-
-          // console.log(`${th.trim()} :: ${td.trim()}`)
-
-          const key = th.trim().replace(/\s/g, '_').toLowerCase()
-          details[key] = td.trim()
-        }
-      }
-      
-      
-      const hasDetail = await detailPage.$('#prodDetails') || false
-      if (hasDetail) {
-        // [Product Information - Technical Details] ✅
-        await detailPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
-        const technicalDetails = await detailPage.$$('#productDetails_techSpec_section_1 tbody tr')
-        // console.log('---- technicalDetails ---')
-        await tableIterator(technicalDetails)
+        // [item 상세] ✅
+        const detailPage = await browser.newPage()
+        await detailPage.setViewport({ width: 1020, height: 890 })
+        await detailPage.goto(`https://www.amazon.com${href}`, { waitUntil: 'load', timeout: 0 })
         
-        // [Product Information - Additional Information] ✅
-        const additionalInfos = await detailPage.$$('#productDetails_detailBullets_sections1 tbody tr')
-        // console.log('---- additionalInfos ---')
-        await tableIterator(additionalInfos)
-      }
+        const title = await detailPage.$eval('#title', el => el.textContent)
+        const price2 = await detailPage.$('#corePriceDisplay_desktop_feature_div span.a-offscreen') || null
+        const price3 = await detailPage.$('span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen') || null
+        const rateNode = await detailPage.$('#acrCustomerReviewLink.a-link-normal') || null
+        
+        
+        const details = {}
+
+        const tableIterator = async (trs) => {
+          for (let i = 0; i < trs.length; i++) {
+            const tr = trs[i]
+
+            // 나중에 🟨 key 값 통일하기
+            const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
+            const td = await tr.$eval('td', el => {
+              const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
+              
+              if (isReview) { // Review 섹션인경우 review 갯수
+                return el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]
+              }
+              return el.textContent
+            }) || null
+
+            // console.log(`${th.trim()} :: ${td.trim()}`)
+
+            const key = th.trim().replace(/\s/g, '_').toLowerCase()
+            details[key] = td.trim()
+          }
+        }
+        
+        
+        const hasDetail = await detailPage.$('#prodDetails') || false
+        if (hasDetail) {
+          // [Product Information - Technical Details] ✅
+          await detailPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
+          const technicalDetails = await detailPage.$$('#productDetails_techSpec_section_1 tbody tr')
+          // console.log('---- technicalDetails ---')
+          await tableIterator(technicalDetails)
+          
+          // [Product Information - Additional Information] ✅
+          const additionalInfos = await detailPage.$$('#productDetails_detailBullets_sections1 tbody tr')
+          // console.log('---- additionalInfos ---')
+          await tableIterator(additionalInfos)
+        }
 
         // [방어로직들]
         const priceNode = await (price1 || price2 || price3)
@@ -168,49 +172,53 @@ const forPuppeteerWithPage = async () => {
 
 
 
-      // const category 😢
-      // const rank 🤷‍♂️
-      // const sales 😢
-      // const revenue 😢
+        // const category 😢
+        // const rank 🤷‍♂️
+        // const sales 😢
+        // const revenue 😢
 
-      // 상세페이지 닫기 ✅
-      detailPage.close()
+        // 상세페이지 닫기 ✅
+        detailPage.close()
 
 
-      // =================
-      // ====== 결론 ======
-      // =================
+        // =================
+        // ====== 결론 ======
+        // =================
 
-      const object = {
-        title: title.trim(),
-        image,
-        price,
-        href: `https://www.amazon.com${href}`,
-        asin,
-        rating,
-        ...details
+        const object = {
+          title: title.trim(),
+          image,
+          price,
+          href: `https://www.amazon.com${href}`,
+          asin,
+          rating,
+          ...details
+        }
+
+        // console.log(object)
+        result.push(object)
+        console.log(result.length)
       }
+    }
 
-      console.log(object)
-      result.push(object)
+    // 저장하기 ✅
+    const writed = await saveWithCSV(result)
+    
+    if (writed) {
+      console.log(`${colors.bgYellow}    ### BYE ###   `, colors.reset)
+      await browser.close()
+    }
+      
+  } catch (error) {
+    // 에러가 나도 저장하기 ✅
+    const writed = await saveWithCSV(result)
+    
+    if (writed) {
+      console.log(`${colors.bgRed}    >>> Error Occured!! <<<   `, colors.reset)
+      await browser.close()
     }
   }
 
-  // 저장하기 ✅
-  const writed = await saveWithCSV(result)
-  
-  if (writed) {
-    console.log(`${colors.bgYellow}    ### BYE ###   `, colors.reset)
-    await browser.close()
-  }
-
-  // // 에러가 나도 저장하기 🟡
-  // const writed = await saveWithCSV(result)
-  
-  // if (writed) {
-  //   console.log(`${colors.bgRed}    >>> Error Occured!! <<<   `, colors.reset)
-  //   await browser.close()
-  // }
 
   // ===
   // ===
