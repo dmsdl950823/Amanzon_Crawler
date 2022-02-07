@@ -57,13 +57,13 @@ const forPuppeteerWithPage = async () => {
   await page.goto('https://www.amazon.com', { waitUntil: 'load', timeout: 0 })
 
   // [postcode 설정] ✅
-  // await page.click('#nav-global-location-slot')
-  // await page.waitForSelector('#GLUXSignInButton')
-  // await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
-  // await page.click('#GLUXZipUpdate-announce')
+  await page.click('#nav-global-location-slot')
+  await page.waitForSelector('#GLUXSignInButton')
+  await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
+  await page.click('#GLUXZipUpdate-announce')
 
-  // await page.waitForSelector('.a-popover-footer')
-  // await page.evaluate(() => location.reload(true))
+  await page.waitForSelector('.a-popover-footer')
+  await page.evaluate(() => location.reload(true))
 
   // [카테고리 설정] ✅
   const category = catetories['Office Products']
@@ -78,7 +78,7 @@ const forPuppeteerWithPage = async () => {
   const result = []
 
   // [페이지 돌면서 물품들 확인] ✅
-  for (let pg = 1; pg < 2; pg++) {
+  for (let pg = 1; pg <= 400; pg++) {
     // await page.goto('https://www.amazon.com/s?{search_input}&i={category}&page={pg}') // 페이지 이동
     const url = `https://www.amazon.com/s?k=${search_input}&i=${category}&page=${pg}`
     console.log(`@@ GO page :: ${pg} =>`, url)
@@ -114,7 +114,7 @@ const forPuppeteerWithPage = async () => {
       const title = await detailPage.$eval('#title', el => el.textContent)
       const price2 = await detailPage.$('#corePriceDisplay_desktop_feature_div span.a-offscreen') || null
       const price3 = await detailPage.$('span.a-price.a-text-price.a-size-medium.apexPriceToPay span.a-offscreen') || null
-      const rating = await detailPage.$eval('#acrCustomerReviewLink.a-link-normal', el => el.textContent.trim().replace(/ ratings| rating/gi, '').replace(/,/gi, ''))
+      const rateNode = await detailPage.$('#acrCustomerReviewLink.a-link-normal') || null
       
       
       const details = {}
@@ -160,6 +160,8 @@ const forPuppeteerWithPage = async () => {
         const priceNode = await (price1 || price2 || price3)
         const price = priceNode ? await priceNode.evaluate(el => el.textContent.split('$')[1], priceNode) : null
         //  console.log(price1 ? 'price1' : null, price2 ? 'price2' : null, price3 ? 'price3' : null)
+
+        const rating = rateNode ? await rateNode.evaluate(el => el.textContent.trim().replace(/ ratings| rating/gi, '').replace(/,/gi, ''), rateNode) : null
         
 
         // console.log(details)
@@ -194,7 +196,21 @@ const forPuppeteerWithPage = async () => {
     }
   }
 
+  // 저장하기 ✅
   const writed = await saveWithCSV(result)
+  
+  if (writed) {
+    console.log(`${colors.bgYellow}    ### BYE ###   `, colors.reset)
+    await browser.close()
+  }
+
+  // // 에러가 나도 저장하기 🟡
+  // const writed = await saveWithCSV(result)
+  
+  // if (writed) {
+  //   console.log(`${colors.bgRed}    >>> Error Occured!! <<<   `, colors.reset)
+  //   await browser.close()
+  // }
 
   // ===
   // ===
@@ -206,11 +222,6 @@ const forPuppeteerWithPage = async () => {
   // await pullovers[2].click()
   // await page.waitForSelector('#ppd')
   // await page.screenshot({ path: screenshot })
-  
-  if (writed) {
-    console.log('bye!!')
-    await browser.close()
-  }
 }
 
 forPuppeteerWithPage()
