@@ -5,7 +5,8 @@ const puppeteer = require('puppeteer')
 
 const fs = require('fs')
 const fastcsv = require('fast-csv')
-const ws = fs.createWriteStream('data.csv')
+
+let pageCount = 60 
 
 
 
@@ -26,7 +27,9 @@ const saveWithCSV = (json) => {
   // ]
 
   // console.log(json)
-  
+  const ws = fs.createWriteStream(`upto_${pageCount - 1}.csv`)
+  console.log(`${colors.fgGreen}   @@@ 일단 ${pageCount - 1} 까진 저장 @@@   `, colors.reset)
+
   return fastcsv
     .write(json, { headers: true })
     .on('finish', function () {
@@ -38,7 +41,7 @@ const saveWithCSV = (json) => {
 
 
 // 크롤러 (페이지만 입력하는 방식) ✅
-const forPuppeteerWithPage = async () => {
+const forPuppeteerWithPage = async (innerpagecnt = 1) => {
   console.log(`${colors.bgBlue}     >>> Browser Start! <<<    `, colors.reset)
   // console.log('pupeteer', puppeteer)
   
@@ -82,7 +85,7 @@ const forPuppeteerWithPage = async () => {
   
     
     // [페이지 돌면서 물품들 확인] ✅
-    for (let pg = 1; pg <= 400; pg++) {
+    for (let pg = innerpagecnt; pg <= 400; pg++) {
       // await page.goto('https://www.amazon.com/s?{search_input}&i={category}&page={pg}') // 페이지 이동
       const url = `https://www.amazon.com/s?k=${search_input}&i=${category}&page=${pg}`
       console.log(`@@ GO page :: ${pg} =>`, url)
@@ -199,6 +202,8 @@ const forPuppeteerWithPage = async () => {
         result.push(object)
         console.log(result.length)
       }
+
+      pageCount += 1
     }
 
     // 저장하기 ✅
@@ -212,10 +217,14 @@ const forPuppeteerWithPage = async () => {
   } catch (error) {
     // 에러가 나도 저장하기 ✅
     const writed = await saveWithCSV(result)
+    console.log(error)
     
     if (writed) {
       console.log(`${colors.bgRed}    >>> Error Occured!! <<<   `, colors.reset)
       await browser.close()
+
+
+      return forPuppeteerWithPage(pageCount)
     }
   }
 
@@ -232,7 +241,7 @@ const forPuppeteerWithPage = async () => {
   // await page.screenshot({ path: screenshot })
 }
 
-forPuppeteerWithPage()
+forPuppeteerWithPage(pageCount)
 
 
 // ================
