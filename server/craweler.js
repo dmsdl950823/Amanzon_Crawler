@@ -67,13 +67,13 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
     await page.goto('https://www.amazon.com', { waitUntil: 'load', timeout: 0 })
   
     // [postcode 설정] ✅
-    await page.click('#nav-global-location-slot')
-    await page.waitForSelector('#GLUXSignInButton')
-    await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
-    await page.click('#GLUXZipUpdate-announce')
+    // await page.click('#nav-global-location-slot')
+    // await page.waitForSelector('#GLUXSignInButton')
+    // await page.type('.GLUX_Full_Width.a-declarative', '10001') // 뉴욕 포스트코드
+    // await page.click('#GLUXZipUpdate-announce')
   
-    await page.waitForSelector('.a-popover-footer')
-    await page.evaluate(() => location.reload(true))
+    // await page.waitForSelector('.a-popover-footer')
+    // await page.evaluate(() => location.reload(true))
   
     // [카테고리 설정] ✅
     const category = catetories['Office Products']
@@ -177,20 +177,22 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
 
         if (details.item_weight === undefined) details.item_weight = ''
         else { // pound, ounce 변환
-          const weight = details.item_weight.split(' ')
-          const num = Number(weight[0])
+          const weight = details.item_weight.trim().split(' ')
+          const num = weight[0].slice(1)
           const unit = weight[1]
 
           const unitCalc = {
             ounces: data => data * 1,
             pounds: data => data * 16
           }[unit]
+          // console.log(num.length, num, unitCalc(num))
 
+          // ounce 기준
           details.item_weight = unitCalc(num)
         }
         if (details.size === undefined) details.size = ''
         if (details.brand === undefined) details.brand = ''
-        console.log(details)
+        // console.log(details)
 
 
 
