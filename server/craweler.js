@@ -85,7 +85,7 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
   
     
     // [페이지 돌면서 물품들 확인] ✅
-    for (let pg = innerpagecnt; pg <= 400; pg++) {
+    for (let pg = innerpagecnt; pg <= 200; pg++) {
       // await page.goto('https://www.amazon.com/s?{search_input}&i={category}&page={pg}') // 페이지 이동
       const url = `https://www.amazon.com/s?k=${search_input}&i=${category}&page=${pg}`
       console.log(`@@ GO page :: ${pg} =>`, url)
@@ -169,9 +169,28 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
         //  console.log(price1 ? 'price1' : null, price2 ? 'price2' : null, price3 ? 'price3' : null)
 
         const rating = rateNode ? await rateNode.evaluate(el => el.textContent.trim().replace(/ ratings| rating/gi, '').replace(/,/gi, ''), rateNode) : null
-        
 
-        // console.log(details)
+        // 기타 처리...
+        if (details.best_sellers_rank !== undefined) {
+          details.best_sellers_rank = Number(details.best_sellers_rank.split(' in ')[0].replace('#', '').replace(/,/g, ''))
+        }
+
+        if (details.item_weight === undefined) details.item_weight = ''
+        else { // pound, ounce 변환
+          const weight = details.item_weight.split(' ')
+          const num = Number(weight[0])
+          const unit = weight[1]
+
+          const unitCalc = {
+            ounces: data => data * 1,
+            pounds: data => data * 16
+          }[unit]
+
+          details.item_weight = unitCalc(num)
+        }
+        if (details.size === undefined) details.size = ''
+        if (details.brand === undefined) details.brand = ''
+        console.log(details)
 
 
 
