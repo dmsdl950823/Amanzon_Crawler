@@ -270,7 +270,7 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
   // await page.screenshot({ path: screenshot })
 }
 
-forPuppeteerWithPage(pageCount)
+// forPuppeteerWithPage(pageCount)
 
 
 // ================
@@ -294,7 +294,7 @@ const TEST = async () => {
 
   const testPage = await browser.newPage() // 크롬 브라우저의 탭 하나 생성
   await testPage.setViewport({ width: 1020, height: 890 })
-  await testPage.goto('https://www.amazon.com/Professional-Painting-Supplies-Hobbyists-Beginners/dp/B08L7K5N4Z/ref=sr_1_10?keywords=supplies&qid=1644148891&s=office-products&sr=1-10', { waitUntil: 'load', timeout: 0 })
+  await testPage.goto('https://www.amazon.com/PetFusion-Waterproof-Zippers-25x20x5-5-Furniture/dp/B017J9KKJ0/ref=sr_1_6?crid=3IATDSLJA0F7C&keywords=pets&qid=1644567153&refresh=1&s=pet-supplies&sprefix=pets%2Cpets-intl-ship%2C307&sr=1-6&th=1', { waitUntil: 'load', timeout: 0 })
 
   const test = {}
 
@@ -316,20 +316,46 @@ const TEST = async () => {
     }
   }
   
-  const hasDetail = await testPage.$('#prodDetails') || false
-  if (hasDetail) {
-    // Product Information - Technical Details
-    await testPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
-    const technicalDetails = await testPage.$$('#productDetails_techSpec_section_1 tbody tr')
-    console.log('---- technicalDetails ---')
-    await tableIterator(technicalDetails)
+  // const hasDetail = await testPage.$('#prodDetails') || false
+
+  // if (hasDetail) {
+  //   // Product Information - Technical Details
+  //   await testPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
+  //   const technicalDetails = await testPage.$$('#productDetails_techSpec_section_1 tbody tr')
+  //   console.log('---- technicalDetails ---')
+  //   await tableIterator(technicalDetails)
     
-    // Product Information - Additional Information
-    const additionalInfos = await testPage.$$('#productDetails_detailBullets_sections1 tbody tr')
-    console.log('---- additionalInfos ---')
-    await tableIterator(additionalInfos)
-  } else {
-    console.log('ㄻㄴㄷㄻㄴㄷ..?')
+  //   // Product Information - Additional Information
+  //   const additionalInfos = await testPage.$$('#productDetails_detailBullets_sections1 tbody tr')
+  //   console.log('---- additionalInfos ---')
+  //   await tableIterator(additionalInfos)
+  // }
+
+  const detailTable = await testPage.$('#detailBulletsWrapper_feature_div') || false
+  // ㅇㅅㅇ .. 큼냘잉..
+  const tableIterator2 = async (lis) => {
+    for (let i = 0; i < lis.length; i++) {
+      const li = lis[i]
+
+      // 여기 작업 시작! 🟡
+      const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
+      // const td = await tr.$eval('td', el => {
+      //   const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
+      //   if (isReview) return `${el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]} (${isReview.textContent})`
+      //   return el.textContent
+      // }) || null
+
+      // console.log(`${th.trim()} :: ${td.trim()}`)
+
+      // const key = th.trim().replace(/\s/g, '_').toLowerCase()
+      // test[key] = td.trim()
+    }
+  }
+
+  if (detailTable) {
+    await testPage.waitForSelector('.a-unordered-list') // [목록 가져올때까지 기다리기]
+    const technicalDetails = await testPage.$$('#detailBulletsWrapper_feature_div .a-unordered-list li')
+    await tableIterator2(technicalDetails)
   }
 
   console.log(test)
@@ -339,4 +365,4 @@ const TEST = async () => {
   // await browser.close()
 }
 
-// TEST()
+TEST()
