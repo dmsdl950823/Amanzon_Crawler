@@ -296,25 +296,25 @@ const TEST = async () => {
   await testPage.setViewport({ width: 1020, height: 890 })
   await testPage.goto('https://www.amazon.com/PetFusion-Waterproof-Zippers-25x20x5-5-Furniture/dp/B017J9KKJ0/ref=sr_1_6?crid=3IATDSLJA0F7C&keywords=pets&qid=1644567153&refresh=1&s=pet-supplies&sprefix=pets%2Cpets-intl-ship%2C307&sr=1-6&th=1', { waitUntil: 'load', timeout: 0 })
 
-  const test = {}
+  // const test = {}
 
-  const tableIterator = async (trs) => {
-    for (let i = 0; i < trs.length; i++) {
-      const tr = trs[i]
+  // const tableIterator = async (trs) => {
+  //   for (let i = 0; i < trs.length; i++) {
+  //     const tr = trs[i]
 
-      const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
-      const td = await tr.$eval('td', el => {
-        const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
-        if (isReview) return `${el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]} (${isReview.textContent})`
-        return el.textContent
-      }) || null
+  //     const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
+  //     const td = await tr.$eval('td', el => {
+  //       const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
+  //       if (isReview) return `${el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]} (${isReview.textContent})`
+  //       return el.textContent
+  //     }) || null
 
-      console.log(`${th.trim()} :: ${td.trim()}`)
+  //     console.log(`${th.trim()} :: ${td.trim()}`)
 
-      const key = th.trim().replace(/\s/g, '_').toLowerCase()
-      test[key] = td.trim()
-    }
-  }
+  //     const key = th.trim().replace(/\s/g, '_').toLowerCase()
+  //     test[key] = td.trim()
+  //   }
+  // }
   
   // const hasDetail = await testPage.$('#prodDetails') || false
 
@@ -333,34 +333,45 @@ const TEST = async () => {
 
   const detailTable = await testPage.$('#detailBulletsWrapper_feature_div') || false
   // ㅇㅅㅇ .. 큼냘잉..
-  const tableIterator2 = async (lis) => {
+  const detailIterator = async (lis) => {
+    let result = {}
+
     for (let i = 0; i < lis.length; i++) {
       const li = lis[i]
 
-      // 여기 작업 시작! 🟡
-      const th = await tr.$eval('th.prodDetSectionEntry', el => el.textContent) || null
-      // const td = await tr.$eval('td', el => {
-      //   const isReview = el.querySelector('#averageCustomerReviews #acrCustomerReviewText')
-      //   if (isReview) return `${el.textContent.trim().split('}')[1].split(' out of 5 stars')[0]} (${isReview.textContent})`
-      //   return el.textContent
-      // }) || null
+      const obj = await li.evaluate(el => {
+        const isReview = el.querySelector('#detailBullets_averageCustomerReviews')
+        if (isReview) {
+          const customer_reviews = isReview.querySelector('.a-icon-alt').textContent.split(' out of 5 stars')[0]
+          return { customer_reviews }
+        }
+        
+        const info = {}
+        const text = el.textContent.trim().replace(/  |\n/g, '').split(':')
+        const key = text[0]?.trim().replace(/\s/g, '_').toLowerCase()
+        info[key] = text[1]?.trim()
 
-      // console.log(`${th.trim()} :: ${td.trim()}`)
+        return info
+      })
 
-      // const key = th.trim().replace(/\s/g, '_').toLowerCase()
-      // test[key] = td.trim()
+      result = { ...result, ...obj }
     }
+
+    return result
   }
 
+  let details = {}
+
+  console.log(1111, '==??')
   if (detailTable) {
     await testPage.waitForSelector('.a-unordered-list') // [목록 가져올때까지 기다리기]
     const technicalDetails = await testPage.$$('#detailBulletsWrapper_feature_div .a-unordered-list li')
-    await tableIterator2(technicalDetails)
+    const detail = await detailIterator(technicalDetails)
+
+    details = { ...details, ...detail }
   }
-
-  console.log(test)
-
   
+  // console.log(details)
   console.log('bye!!')
   // await browser.close()
 }
