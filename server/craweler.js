@@ -7,7 +7,7 @@ const fs = require('fs')
 const fastcsv = require('fast-csv')
 
 // 시작 페이지 ✅
-let pageCount = 60 
+let pageCount = 1
 let failCnt = 0
 
 
@@ -124,8 +124,9 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
         const rateNode = await detailPage.$('#acrCustomerReviewLink.a-link-normal') || null
         
         
-        const details = {}
+        let details = {}
 
+        // 테이블용 상세목록 가져오기
         const tableIterator = async (trs) => {
           for (let i = 0; i < trs.length; i++) {
             const tr = trs[i]
@@ -147,10 +148,42 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
             details[key] = td.trim()
           }
         }
+
+        // ul/li용 상세목록 가져오기
+        const detailIterator = async (lis) => {
+          let result = {}
+      
+          for (let i = 0; i < lis.length; i++) {
+            const li = lis[i]
+      
+            const obj = await li.evaluate(el => {
+              const isReview = el.querySelector('#detailBullets_averageCustomerReviews')
+              if (isReview) {
+                const customer_reviews = isReview.querySelector('.a-icon-alt').textContent.split(' out of 5 stars')[0]
+                return { customer_reviews }
+              }
+              
+              const info = {}
+              const text = el.textContent.trim().replace(/  |\n/g, '').split(':')
+              const key = text[0]?.trim().replace(/\s/g, '_').toLowerCase()
+              const value = text[1]?.trim()
+              // info[key] = value.test(/ in /g) ? value.split(' in ')[0].replace(/,|#/, '') : value
+              info[key] = value
+      
+              return info
+            })
+      
+            result = { ...result, ...obj }
+          }
+      
+          return result
+        }
         
+
         
-        const hasDetail = await detailPage.$('#prodDetails') || false
-        if (hasDetail) {
+        // [상세페이지 > '테이블' 이 있는 곳에서만 사용 가능] ex) Office Product ✅
+        const detailTable = await detailPage.$('#prodDetails') || false
+        if (detailTable) {
           // [Product Information - Technical Details] ✅
           await detailPage.waitForSelector('#prodDetails') // [목록 가져올때까지 기다리기]
           const technicalDetails = await detailPage.$$('#productDetails_techSpec_section_1 tbody tr')
@@ -162,6 +195,17 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
           // console.log('---- additionalInfos ---')
           await tableIterator(additionalInfos)
         }
+
+        // [상세페이지 > 'ul/li' 가 있는 곳에서만 사용 가능] ex) Pet Supplies ✅
+        const detailList = await detailPage.$('#detailBulletsWrapper_feature_div') || false
+        if (detailList) {
+          await detailPage.waitForSelector('.a-unordered-list') // [목록 가져올때까지 기다리기]
+          const technicalDetails = await detailPage.$$('#detailBulletsWrapper_feature_div .a-unordered-list li')
+          const detail = await detailIterator(technicalDetails)
+      
+          details = { ...details, ...detail }
+        }
+
 
         // [방어로직들]
         const priceNode = await (price1 || price2 || price3)
@@ -175,7 +219,7 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
           details.best_sellers_rank = Number(details.best_sellers_rank.split(' in ')[0].replace('#', '').replace(/,/g, ''))
         }
 
-        if (details.item_weight === undefined) details.item_weight = ''
+        if (details.item_weight === undefined) details.item_weight = null
         else { // pound, ounce 변환
           const weight = details.item_weight.trim().split(' ')
           const num = weight[0].slice(1)
@@ -190,8 +234,8 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
           // ounce 기준
           details.item_weight = unitCalc(num)
         }
-        if (details.size === undefined) details.size = ''
-        if (details.brand === undefined) details.brand = ''
+        if (details.size === undefined) details.size = null
+        if (details.brand === undefined) details.brand = null
         // console.log(details)
 
 
@@ -270,7 +314,7 @@ const forPuppeteerWithPage = async (innerpagecnt = 1) => {
   // await page.screenshot({ path: screenshot })
 }
 
-// forPuppeteerWithPage(pageCount)
+forPuppeteerWithPage(pageCount)
 
 
 // ================
@@ -331,6 +375,8 @@ const TEST = async () => {
   //   await tableIterator(additionalInfos)
   // }
 
+  // console.log(hasDetail)
+
   const detailTable = await testPage.$('#detailBulletsWrapper_feature_div') || false
   // ㅇㅅㅇ .. 큼냘잉..
   const detailIterator = async (lis) => {
@@ -362,7 +408,6 @@ const TEST = async () => {
 
   let details = {}
 
-  console.log(1111, '==??')
   if (detailTable) {
     await testPage.waitForSelector('.a-unordered-list') // [목록 가져올때까지 기다리기]
     const technicalDetails = await testPage.$$('#detailBulletsWrapper_feature_div .a-unordered-list li')
@@ -376,4 +421,4 @@ const TEST = async () => {
   // await browser.close()
 }
 
-TEST()
+// TEST()
